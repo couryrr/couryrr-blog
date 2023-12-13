@@ -1,7 +1,18 @@
 {
   "name": "Node Container",
   "build": {
-		"dockerfile": "./Dockerfile"
-	}, 
+    "dockerfile": "./Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "golang.go",
+        "esbenp.prettier-vscode",
+        "visualstudioexptteam.vscodeintellicode"
+      ]
+    }
+  },
   "remoteUser": "somedev"
 }
