@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import avatar from "./assets/avataaars.png";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 const [m, setM] = createSignal("## Test markdown");
 
@@ -83,7 +84,9 @@ function App() {
           </aside>
           <section
             class="w-3/4 p-4 border border-solid border-gray-700"
-            innerHTML={marked.parse(m())}
+            innerHTML={DOMPurify.sanitize(marked.parse(m()), {
+              USE_PROFILES: { html: true },
+            })}
           ></section>
         </div>
       </div>
