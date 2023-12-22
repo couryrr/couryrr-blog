@@ -1,3 +1,3 @@
-module github.com/dapper-cloud/go-backend-tmpl
+module github.com/couryrr/couryrr-blog
 
-go 1.20
+go 1.18
