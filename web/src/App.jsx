@@ -1,9 +1,15 @@
-import { createSignal } from "solid-js";
+import { For, createResource, createEffect } from "solid-js";
 import avatar from "./assets/avataaars.png";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
-const [m, setM] = createSignal("## Test markdown");
+const getPosts = async () => {
+  const response = await fetch(`http://localhost:8080/post/slug`);
+  const data = await response.text();
+  return data;
+};
+
+const [posts] = createResource(getPosts);
 
 function App() {
   return (
@@ -76,15 +82,12 @@ function App() {
               />
             </div>
             <ul>
-              <li>1</li>
-              <li>2</li>
-              <li>3</li>
-              <li>4</li>
+              <li>{posts()}</li>
             </ul>
           </aside>
           <section
             class="w-3/4 p-4 border border-solid border-gray-700"
-            innerHTML={DOMPurify.sanitize(marked.parse(m()), {
+            innerHTML={DOMPurify.sanitize(marked.parse("# Test"), {
               USE_PROFILES: { html: true },
             })}
           ></section>
