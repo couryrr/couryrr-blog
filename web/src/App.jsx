@@ -4,8 +4,8 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 
 const getPosts = async () => {
-  const response = await fetch(`http://localhost:8080/post/slug`);
-  const data = await response.text();
+  const response = await fetch(`http://localhost:8080/posts`);
+  const data = await response.json();
   return data;
 };
 
@@ -56,7 +56,15 @@ function App() {
       </nav>
       <div class="p-4">
         <div class="flex gap-2 mt-2">
-          <aside class="w-1/4 p-4 border border-solid border-gray-700">
+          <aside class="w-1/4 p-4 border border-solid border-heather-700 rounded-md">
+            <button
+              onClick={(e) => {
+                fetch("http://localhost:8080/post", { method: "POST" });
+              }}
+              class="border w-full rounded-md p-1 mb-2 border-solid border-heather-700"
+            >
+              Create
+            </button>
             <div class="relative bg-transparent">
               <div class="absolute inset-y-100 right-0 flex items-center ps-3 pointer-events-none">
                 <svg
@@ -75,18 +83,24 @@ function App() {
                 </svg>
               </div>
               <input
-                class="border w-full rounded-md p-1 bg-transparent border-solid border-gray-700"
+                class="border w-full rounded-md p-1 bg-transparent border-solid border-heather-700"
                 type="text"
                 name="search"
                 id="search"
               />
             </div>
             <ul>
-              <li>{posts()}</li>
+              <For each={posts()} fallback={<div>loading ... </div>}>
+                {(item) => (
+                  <li>
+                    <a>{item.title}</a>
+                  </li>
+                )}
+              </For>
             </ul>
           </aside>
           <section
-            class="w-3/4 p-4 border border-solid border-gray-700"
+            class="w-3/4 p-4 border border-solid border-heather-700 rounded-md"
             innerHTML={DOMPurify.sanitize(marked.parse("# Test"), {
               USE_PROFILES: { html: true },
             })}
