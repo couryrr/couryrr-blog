@@ -1,4 +1,4 @@
-import { For, createResource, createEffect } from "solid-js";
+import { For, createResource, createEffect, createSignal } from "solid-js";
 import avatar from "./assets/avataaars.png";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -10,7 +10,7 @@ const getPosts = async () => {
 };
 
 const [posts] = createResource(getPosts);
-
+const [post, setPost] = createSignal({ title: "not test" });
 function App() {
   return (
     <div class="h-screen bg-heather-100">
@@ -92,19 +92,27 @@ function App() {
             <ul>
               <For each={posts()} fallback={<div>loading ... </div>}>
                 {(item) => (
-                  <li>
-                    <a>{item.title}</a>
+                  <li
+                    onClick={async () => {
+                      const response = await fetch(
+                        `http://localhost:8080/post?id=${item.id}`
+                      );
+                      const d = await response.json();
+                      setPost(d);
+                    }}
+                  >
+                    {item.id} - {item.title}
                   </li>
                 )}
               </For>
             </ul>
           </aside>
-          <section
-            class="w-3/4 p-4 border border-solid border-heather-700 rounded-md"
-            innerHTML={DOMPurify.sanitize(marked.parse("# Test"), {
-              USE_PROFILES: { html: true },
-            })}
-          ></section>
+          <section class="w-3/4 p-4 border border-solid border-heather-700 rounded-md">
+            <div>
+              {post().title}
+              {post().id}
+            </div>
+          </section>
         </div>
       </div>
     </div>

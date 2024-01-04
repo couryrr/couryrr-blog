@@ -16,6 +16,7 @@ var gDb *sql.DB
 func init() {
 	log.Default().SetFlags(log.Llongfile)
 	log.Default().Println("Init is auto called")
+
 	db, err := sql.Open("sqlite3", "./couryrr-blog.db")
 	if err != nil {
 		log.Fatal("Database cannot init")
@@ -51,7 +52,7 @@ func main() {
 		if r.Method == http.MethodGet {
 			log.Default().Println("GET call to posts endpoint")
 			corsEnabled(w, r)
-			rows, err := gDb.Query("SELECT * FROM post ORDER BY created_at LIMIT 10")
+			rows, err := gDb.Query("SELECT id, title FROM post ORDER BY created_at LIMIT 10")
 
 			if err != nil {
 				log.Default().Printf("Database query failed with %e", err)
@@ -63,7 +64,7 @@ func main() {
 
 			for rows.Next() { // Go version of while. We just use for everywhere...
 				var post Post
-				err := rows.Scan(&post.Id, &post.Title, &post.Created_at, &post.Updated_at, &post.Slug)
+				err := rows.Scan(&post.Id, &post.Title)
 
 				if err != nil {
 					log.Default().Println(err.Error())
@@ -86,14 +87,37 @@ func main() {
 	})
 
 	mux.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
-		log.Default().Println("Creating a post entry")
 		if r.Method == http.MethodPost {
+			log.Default().Println("Creating a post entry")
 			log.Default().Println("POST call to post endpoint")
 			corsEnabled(w, r)
 			_, err := gDb.Exec(`INSERT INTO post (title, created_at, updated_at, slug) VALUES('Test', ?, ?, 'test-this-app')`, time.Now(), time.Now())
 			if err != nil {
 				log.Default().Printf("Database query failed with %e", err)
 			}
+		} else if r.Method == http.MethodGet {
+			log.Default().Println("Reading post entry")
+			log.Default().Println("GET call to post endpoint")
+			corsEnabled(w, r)
+
+			id := r.URL.Query().Get("id")
+
+			row := gDb.QueryRow(`SELECT id, title, slug, created_at, updated_at FROM post WHERE id = ?`, id)
+
+			if row.Err() != nil {
+				log.Default().Printf("Database query failed with %e", row.Err())
+			}
+
+			var post Post
+
+			err := row.Scan(&post.Id, &post.Title, &post.Slug, &post.Created_at, &post.Updated_at)
+
+			if err != nil {
+				log.Default().Printf("Database query failed with %e", err)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(post)
 		} else {
 			log.Default().Printf("%s sent for call to posts endpoint", http.StatusText(http.StatusMethodNotAllowed))
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -101,21 +125,41 @@ func main() {
 	})
 
 	mux.HandleFunc("/dev/db", func(w http.ResponseWriter, r *http.Request) {
+		var err error
 		log.Default().Printf("Creating database")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_, err := gDb.ExecContext(ctx, `DROP TABLE IF EXISTS post`)
+
+		drop := r.URL.Query().Get("drop")
+		if len(drop) > 0 {
+			_, err = gDb.ExecContext(ctx, `DROP TABLE IF EXISTS category`)
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Fatalf(err.Error())
+			}
+			_, err = gDb.ExecContext(ctx, `DROP TABLE IF EXISTS post`)
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Fatalf(err.Error())
+			}
+		}
+		_, err = gDb.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS category(id INTEGER PRIMARY KEY AUTOINCREMENT, 
+			name varchar(255)
+			)`)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Fatalf(err.Error())
 		}
-
 		_, err = gDb.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS post(id INTEGER PRIMARY KEY AUTOINCREMENT, 
 			title varchar(255),
+			slug varchar(255),
+			category_id INTEGER , 
 			created_at DATETIME,
 			updated_at DATETIME,
-			slug varchar(255)
+			FOREIGN KEY (category_id) REFERENCES category (id)
 			)`)
 
 		if err != nil {
