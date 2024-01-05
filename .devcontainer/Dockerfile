@@ -1,4 +1,4 @@
-FROM ghcr.io/couryrr/devcontainer:0.1
+FROM ghcr.io/couryrr/devcontainer:0.1.1
 
 RUN sudo apt update &&\
     sudo apt upgrade -y &&\
